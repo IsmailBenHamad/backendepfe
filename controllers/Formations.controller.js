@@ -1,4 +1,5 @@
 const Formation = require('../models/Formation');
+const cloudinary = require('../config/cloudinary');
 
 const FormationController = {
   getAllFormations: async (req, res) => {
@@ -29,47 +30,62 @@ const FormationController = {
   },
 
   createFormation: async (req, res) => {
-    const { nomformation, duree, description, prix, image, niveau, categorie } = req.body;
+    const { nomformation, duree, description, prix, niveau, categorie } = req.body;
 
     try {
-      const nouvelleFormation = await Formation.create({
-        nomformation,
-        duree,
-        description,
-        prix,
-        image,
-        niveau,
-        categorie,
-      });
+        // Ensure imageUrl is set to req.cloudinaryUrl
+        const imageUrl = req.cloudinaryUrl || '';
 
-      res.status(201).json(nouvelleFormation);
+        // Create the formation with imageUrl
+        const nouvelleFormation = await Formation.create({
+            nomformation,
+            duree,
+            description,
+            prix,
+            image: imageUrl,
+            niveau,
+            categorie,
+        });
+
+        res.status(201).json(nouvelleFormation);
     } catch (error) {
-      console.error(error);
-      res.status(500).send('Erreur serveur');
+        console.error('Error creating formation:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
     }
-  },
+},
 
-  updateFormation: async (req, res) => {
+  
+
+updateFormation: async (req, res) => {
+    const { nomformation, duree, description, prix, niveau, categorie } = req.body;
     const id = req.params.id;
-    const { nomformation, duree, description, prix, image, niveau, categorie } = req.body;
 
     try {
-      const formationMaj = await Formation.findByIdAndUpdate(
-        id,
-        { nomformation, duree, description, prix, image, niveau, categorie },
-        { new: true }
-      ).populate('categorie');
+        let updateData = { nomformation, duree, description, prix, niveau, categorie };
 
-      if (formationMaj) {
-        res.status(200).json(formationMaj);
-      } else {
-        res.status(404).send('Formation non trouvée');
-      }
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path);
+            if (result && result.secure_url) {
+                updateData.image = result.secure_url;
+            } else {
+                throw new Error("Image upload failed");
+            }
+        }
+
+        const formationMaj = await Formation.findByIdAndUpdate(id, updateData, { new: true }).populate('categorie');
+
+        if (formationMaj) {
+            res.status(200).json(formationMaj);
+        } else {
+            res.status(404).send('Formation non trouvée');
+        }
     } catch (error) {
-      console.error(error);
-      res.status(500).send('Erreur serveur');
+        console.error(error);
+        res.status(500).send('Erreur serveur');
     }
-  },
+},
+
+
   getFormationsByCategorie: async (req, res) => {
     const categorieId = req.params.categorieId;
 
@@ -104,6 +120,11 @@ const FormationController = {
       res.status(500).send('Erreur serveur');
     }
   },
+  
 };
+
+
+
+
 
 module.exports = FormationController;

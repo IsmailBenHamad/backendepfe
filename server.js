@@ -29,7 +29,8 @@ const CategorieRoute = require('./routes/Categorie.route');
 const FormationRoute = require('./routes/Formations.route');
 const ModuleRoute = require('./routes/Module.route');
 const AuthController = require('./routes/auth.routes');
-const PresenceRoute =require('./routes/Presence.routes')
+const PresenceRoute =require('./routes/Presence.routes');
+
 
 // Utilisation des routes
 app.use('/api/', EtudiantRoutes);
